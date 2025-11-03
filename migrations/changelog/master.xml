@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Core schema - users, auth, profiles -->
+    <include file="changeset/core/02-11-2025-initial-core-schema.sql" relativeToChangelogFile="true"/>
+
+    <!-- Banking schema - accounts, transactions, categories
+    <include file="changeset/banking/02-11-2025-banking-schema.sql" relativeToChangelogFile="true"/>-->
+
+    <!-- Seed data - banks, system categories -->
+    <include file="changeset/seed/01-11-2025-seed-data.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
