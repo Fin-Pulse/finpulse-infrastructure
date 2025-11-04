@@ -1,8 +1,8 @@
 -- Начальные данные
-INSERT INTO banks (id, name, code, base_url, auth_type) VALUES
-(gen_random_uuid(), 'Virtual Bank', 'VBANK', 'https://vbank.open.bankingapi.ru', 'OAUTH2'),
-(gen_random_uuid(), 'Awesome Bank', 'ABANK', 'https://abank.open.bankingapi.ru/docs', 'OAUTH2'),
-(gen_random_uuid(), 'Smart Bank', 'SBANK', 'https://sbank.open.bankingapi.ru/docs', 'OAUTH2');
+INSERT INTO banks (id, name, code, base_url) VALUES
+(gen_random_uuid(), 'Virtual Bank', 'VBANK', 'https://vbank.open.bankingapi.ru'),
+(gen_random_uuid(), 'Awesome Bank', 'ABANK', 'https://abank.open.bankingapi.ru/docs'),
+(gen_random_uuid(), 'Smart Bank', 'SBANK', 'https://sbank.open.bankingapi.ru/docs');
 
 -- Системные категории
 INSERT INTO categories (id, name, color, icon, is_system, created_at) VALUES

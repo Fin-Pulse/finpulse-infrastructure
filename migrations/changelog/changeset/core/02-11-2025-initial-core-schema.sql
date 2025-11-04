@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
     bank_client_id VARCHAR(100) UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT true,
     is_verified BOOLEAN DEFAULT false,
+    verification_token VARCHAR(255),
+    verification_token_expiry TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -116,7 +118,6 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- changeset finpulse:9
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
-CREATE INDEX IF NOT EXISTS idx_users_bank_client_id ON users(bank_client_id);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
 -- changeset finpulse:10
@@ -158,13 +159,13 @@ CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 
 -- changeset finpulse:17
-ALTER TABLE user_consents ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id);
-ALTER TABLE user_consents ADD FOREIGN KEY IF NOT EXISTS (bank_id) REFERENCES banks(id);
-ALTER TABLE accounts ADD FOREIGN KEY IF NOT EXISTS (user_consent_id) REFERENCES user_consents(id);
-ALTER TABLE transactions ADD FOREIGN KEY IF NOT EXISTS (account_id) REFERENCES accounts(id);
-ALTER TABLE transactions ADD FOREIGN KEY IF NOT EXISTS (category_id) REFERENCES categories(id);
-ALTER TABLE categories ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id);
-ALTER TABLE categories ADD FOREIGN KEY IF NOT EXISTS (parent_id) REFERENCES categories(id);
-ALTER TABLE budgets ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id);
-ALTER TABLE budgets ADD FOREIGN KEY IF NOT EXISTS (category_id) REFERENCES categories(id);
-ALTER TABLE notifications ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id);
+ALTER TABLE user_consents ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE user_consents ADD FOREIGN KEY (bank_id) REFERENCES banks(id);
+ALTER TABLE accounts ADD FOREIGN KEY (user_consent_id) REFERENCES user_consents(id);
+ALTER TABLE transactions ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
+ALTER TABLE transactions ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE categories ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE categories ADD FOREIGN KEY (parent_id) REFERENCES categories(id);
+ALTER TABLE budgets ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE budgets ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users(id);
