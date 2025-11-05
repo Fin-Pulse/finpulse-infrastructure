@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN DEFAULT false,
     verification_token VARCHAR(255),
     verification_token_expiry TIMESTAMP,
+    verification_status VARCHAR(50) DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -29,10 +30,11 @@ CREATE TABLE IF NOT EXISTS banks (
 -- changeset finpulse:3
 CREATE TABLE IF NOT EXISTS user_consents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
+    bank_client_id VARCHAR(100) NOT NULL,
     bank_id UUID NOT NULL,
-    consent_id VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'active',
+    consent_id VARCHAR(255),
+    request_id VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'PENDING',
     permissions TEXT,
     expires_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -125,10 +127,12 @@ CREATE INDEX IF NOT EXISTS idx_banks_code ON banks(code);
 CREATE INDEX IF NOT EXISTS idx_banks_is_active ON banks(is_active);
 
 -- changeset finpulse:11
-CREATE INDEX IF NOT EXISTS idx_user_consents_user_id ON user_consents(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_consents_bank_client_id ON user_consents(bank_client_id);
 CREATE INDEX IF NOT EXISTS idx_user_consents_bank_id ON user_consents(bank_id);
 CREATE INDEX IF NOT EXISTS idx_user_consents_consent_id ON user_consents(consent_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_user_consents_user_bank_unique ON user_consents(user_id, bank_id);
+CREATE INDEX IF NOT EXISTS idx_user_consents_request_id ON user_consents(request_id);
+CREATE INDEX IF NOT EXISTS idx_user_consents_status ON user_consents(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_consents_client_bank_unique ON user_consents(bank_client_id, bank_id);
 
 -- changeset finpulse:12
 CREATE INDEX IF NOT EXISTS idx_accounts_user_consent_id ON accounts(user_consent_id);
@@ -159,7 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 
 -- changeset finpulse:17
-ALTER TABLE user_consents ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE user_consents ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank_client_id);
 ALTER TABLE user_consents ADD FOREIGN KEY (bank_id) REFERENCES banks(id);
 ALTER TABLE accounts ADD FOREIGN KEY (user_consent_id) REFERENCES user_consents(id);
 ALTER TABLE transactions ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
