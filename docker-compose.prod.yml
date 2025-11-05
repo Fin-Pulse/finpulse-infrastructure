@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: finpulse-postgres
+    environment:
+      POSTGRES_DB: finpulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finpulse-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: finpulse-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - finpulse-network
+
+  userservice:
+    image: lohop/finpulse-userservice:latest
+    container_name: finpulse-userservice
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET:-EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90q}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+
+  aggregationservice:
+    image: lohop/finpulse-aggregationservice:latest
+    container_name: finpulse-aggregationservice
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+      - BANK_CLIENT_ID=${BANK_CLIENT_ID:-team214}
+      - BANK_CLIENT_SECRET=${BANK_CLIENT_SECRET:-hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+
+volumes:
+  postgres_data:
+
+networks:
+  finpulse-network:
+    driver: bridge
