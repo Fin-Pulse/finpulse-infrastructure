@@ -55,6 +55,18 @@ services:
       - redis
     networks:
       - finpulse-network
+  notificationservice:
+    image: lohop/finpulse-notificationservice:latest
+    container_name: finpulse-notificationservice
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+    depends_on:
+      - postgres
+    networks:
+      - finpulse-network
 
 volumes:
   postgres_data:
