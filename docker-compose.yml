@@ -156,6 +156,22 @@ services:
     networks:
       - finpulse-network
 
+  ml-forecast-service:
+    image: finpulse/mlservice:latest
+    container_name: finpulse-mlservice
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=finpulse
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   kafka_data:
