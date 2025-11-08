@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     account_id UUID NOT NULL,
+    bank_client_id VARCHAR(100) NOT NULL, -- 🔥 ДОБАВЛЯЕМ
     external_transaction_id VARCHAR(100) NOT NULL,
     amount DECIMAL(15,2) NOT NULL DEFAULT 0,
     currency VARCHAR(3) DEFAULT 'RUB',
@@ -146,6 +147,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_external_transaction_id ON transacti
 CREATE INDEX IF NOT EXISTS idx_transactions_booking_date ON transactions(booking_date);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_account_external_unique ON transactions(account_id, external_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_id ON transactions(bank_client_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_booking_date ON transactions(bank_client_id, booking_date);
 
 -- changeset finpulse:14
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
@@ -168,6 +171,7 @@ ALTER TABLE user_consents ADD FOREIGN KEY (bank_id) REFERENCES banks(id);
 ALTER TABLE accounts ADD FOREIGN KEY (user_consent_id) REFERENCES user_consents(id);
 ALTER TABLE transactions ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
 ALTER TABLE transactions ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE transactions ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank_client_id);
 ALTER TABLE categories ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE categories ADD FOREIGN KEY (parent_id) REFERENCES categories(id);
 ALTER TABLE budgets ADD FOREIGN KEY (user_id) REFERENCES users(id);
