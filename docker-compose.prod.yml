@@ -204,5 +204,3 @@ volumes:
 networks:
   finpulse-network:
     driver: bridge
-
-
