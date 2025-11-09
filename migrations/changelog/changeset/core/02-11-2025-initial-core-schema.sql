@@ -65,46 +65,19 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     account_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    bank_client_id VARCHAR(100) NOT NULL,
     external_transaction_id VARCHAR(100) NOT NULL,
-    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
-    currency VARCHAR(3) DEFAULT 'RUB',
-    credit_debit_indicator VARCHAR(10) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Booked',
     booking_date TIMESTAMP NOT NULL,
-    value_date TIMESTAMP,
+    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    absolute_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    is_expense BOOLEAN NOT NULL,
     transaction_information TEXT,
-    bank_transaction_code VARCHAR(100),
-    merchant_name VARCHAR(255),
-    category_id UUID,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    credit_debit_indicator VARCHAR(10) NOT NULL,
+    category VARCHAR(100)
 );
 
 -- changeset finpulse:6
-CREATE TABLE IF NOT EXISTS categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID,
-    name VARCHAR(255) NOT NULL,
-    color VARCHAR(7) DEFAULT '#666666',
-    icon VARCHAR(50),
-    parent_id UUID,
-    is_system BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- changeset finpulse:7
-CREATE TABLE IF NOT EXISTS budgets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-    category_id UUID NOT NULL,
-    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
-    period VARCHAR(20) NOT NULL DEFAULT 'monthly',
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- changeset finpulse:8
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
@@ -117,16 +90,16 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- changeset finpulse:9
+-- changeset finpulse:7
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
--- changeset finpulse:10
+-- changeset finpulse:8
 CREATE INDEX IF NOT EXISTS idx_banks_code ON banks(code);
 CREATE INDEX IF NOT EXISTS idx_banks_is_active ON banks(is_active);
 
--- changeset finpulse:11
+-- changeset finpulse:9
 CREATE INDEX IF NOT EXISTS idx_user_consents_bank_client_id ON user_consents(bank_client_id);
 CREATE INDEX IF NOT EXISTS idx_user_consents_bank_id ON user_consents(bank_id);
 CREATE INDEX IF NOT EXISTS idx_user_consents_consent_id ON user_consents(consent_id);
@@ -134,42 +107,33 @@ CREATE INDEX IF NOT EXISTS idx_user_consents_request_id ON user_consents(request
 CREATE INDEX IF NOT EXISTS idx_user_consents_status ON user_consents(status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_consents_client_bank_unique ON user_consents(bank_client_id, bank_id);
 
--- changeset finpulse:12
+-- changeset finpulse:10
 CREATE INDEX IF NOT EXISTS idx_accounts_user_consent_id ON accounts(user_consent_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_external_account_id ON accounts(external_account_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_account_number ON accounts(account_number);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_user_consent_external_unique ON accounts(user_consent_id, external_account_id);
 
--- changeset finpulse:13
+-- changeset finpulse:11
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_external_transaction_id ON transactions(external_transaction_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_booking_date ON transactions(booking_date);
-CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_is_expense ON transactions(is_expense);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_account_external_unique ON transactions(account_id, external_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_id ON transactions(bank_client_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_booking_date ON transactions(bank_client_id, booking_date);
 
--- changeset finpulse:14
-CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
-CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
-CREATE INDEX IF NOT EXISTS idx_categories_is_system ON categories(is_system);
-
--- changeset finpulse:15
-CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
-CREATE INDEX IF NOT EXISTS idx_budgets_category_id ON budgets(category_id);
-CREATE INDEX IF NOT EXISTS idx_budgets_period ON budgets(period);
-
--- changeset finpulse:16
+-- changeset finpulse:12
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 
--- changeset finpulse:17
+-- changeset finpulse:13
 ALTER TABLE user_consents ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank_client_id);
 ALTER TABLE user_consents ADD FOREIGN KEY (bank_id) REFERENCES banks(id);
 ALTER TABLE accounts ADD FOREIGN KEY (user_consent_id) REFERENCES user_consents(id);
 ALTER TABLE transactions ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
-ALTER TABLE transactions ADD FOREIGN KEY (category_id) REFERENCES categories(id);
-ALTER TABLE categories ADD FOREIGN KEY (user_id) REFERENCES users(id);
-ALTER TABLE categories ADD FOREIGN KEY (parent_id) REFERENCES categories(id);
-ALTER TABLE budgets ADD FOREIGN KEY (user_id) REFERENCES users(id);
-ALTER TABLE budgets ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE transactions ADD FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE transactions ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank_client_id);
 ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users(id);

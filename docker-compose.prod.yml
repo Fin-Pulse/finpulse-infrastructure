@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # База данных
   postgres:
     image: postgres:14
     container_name: finpulse-postgres
@@ -14,6 +15,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - finpulse-network
+    restart: unless-stopped
+
   liquibase-migrations:
     image: liquibase/liquibase:latest
     container_name: finpulse-liquibase
@@ -35,6 +38,7 @@ services:
       - ./liquibase-drivers:/liquibase/classpath
     restart: "no"
 
+  # Кэш
   redis:
     image: redis:7-alpine
     container_name: finpulse-redis
@@ -42,7 +46,58 @@ services:
       - "6379:6379"
     networks:
       - finpulse-network
+    restart: unless-stopped
 
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    hostname: kafka
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      CLUSTER_ID: ZVYcJ0GdQO2V7cLDgOkPAg==
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
+  # Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: finpulse-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    command: server /data --console-address ":9001"
+    networks:
+      - finpulse-network
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Микросервисы
   userservice:
     image: lohop/finpulse-userservice:latest
     container_name: finpulse-userservice
@@ -52,13 +107,20 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - DB_URL=jdbc:postgresql://postgres:5432/finpulse
       - REDIS_HOST=redis
-      - JWT_SECRET=${JWT_SECRET:-EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90q}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - JWT_SECRET=${JWT_SECRET:-EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90}
     depends_on:
       - postgres
       - redis
+      - kafka
     networks:
       - finpulse-network
-
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
   aggregationservice:
     image: lohop/finpulse-aggregationservice:latest
     container_name: finpulse-aggregationservice
@@ -68,28 +130,76 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - DB_URL=jdbc:postgresql://postgres:5432/finpulse
       - REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - BANK_CLIENT_ID=${BANK_CLIENT_ID:-team214}
       - BANK_CLIENT_SECRET=${BANK_CLIENT_SECRET:-hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r}
     depends_on:
       - postgres
       - redis
+      - kafka
     networks:
       - finpulse-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   notificationservice:
     image: lohop/finpulse-notificationservice:latest
     container_name: finpulse-notificationservice
     ports:
       - "8084:8084"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=prod
       - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000/ml-charts}
     depends_on:
       - postgres
+      - redis
+      - kafka
+      - minio
     networks:
       - finpulse-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8084/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ml-forecast-service:
+    image: lohop/finpulse-mlservice:latest
+    container_name: finpulse-mlservice
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=finpulse
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_SECURE=0
+    depends_on:
+      - kafka
+      - postgres
+      - minio
+    networks:
+      - finpulse-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+    driver: local
+  kafka_data:
+    driver: local
+  minio_data:
+    driver: local
 
 networks:
   finpulse-network:
