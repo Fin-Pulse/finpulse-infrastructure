@@ -100,7 +100,19 @@ services:
       KAFKA_CLUSTERS_0_KRAFT_ENABLED: "true"
     networks:
       - finpulse-network
-
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - finpulse-network
+    volumes:
+      - minio_data:/data
   # Микросервисы
   userservice:
     image: finpulse/userservice:latest
@@ -175,6 +187,7 @@ services:
 volumes:
   postgres_data:
   kafka_data:
+  minio_data:
 
 networks:
   finpulse-network:

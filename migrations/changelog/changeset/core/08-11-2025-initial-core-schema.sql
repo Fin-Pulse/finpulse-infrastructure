@@ -1,25 +1,20 @@
 -- changeset finpulse:18
 CREATE TABLE IF NOT EXISTS user_forecasts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-
-    -- Основные метрики прогноза
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
     forecast_amount DECIMAL(15,2) NOT NULL,
     confidence_min DECIMAL(15,2),
     confidence_max DECIMAL(15,2),
     change_percentage DECIMAL(5,2),
     last_week_amount DECIMAL(15,2),
     forecast_method VARCHAR(50),
-
-    -- Временные метки
     forecast_week_start DATE NOT NULL,
+    full_forecast_data JSONB,
+    chart_urls JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- Полные данные ML модели
-    full_forecast_data JSONB NOT NULL
+    UNIQUE(user_id, forecast_week_start)
 );
-
 -- changeset finpulse:19
 CREATE INDEX IF NOT EXISTS idx_user_forecasts_user_id ON user_forecasts(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_forecasts_week_start ON user_forecasts(forecast_week_start);

@@ -65,19 +65,16 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     account_id UUID NOT NULL,
-    bank_client_id VARCHAR(100) NOT NULL, -- 🔥 ДОБАВЛЯЕМ
+    user_id UUID NOT NULL,
+    bank_client_id VARCHAR(100) NOT NULL,
     external_transaction_id VARCHAR(100) NOT NULL,
-    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
-    currency VARCHAR(3) DEFAULT 'RUB',
-    credit_debit_indicator VARCHAR(10) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Booked',
     booking_date TIMESTAMP NOT NULL,
-    value_date TIMESTAMP,
+    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    absolute_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    is_expense BOOLEAN NOT NULL,
     transaction_information TEXT,
-    bank_transaction_code VARCHAR(100),
-    merchant_name VARCHAR(255),
-    category_id UUID,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    credit_debit_indicator VARCHAR(10) NOT NULL,
+    category VARCHAR(100)
 );
 
 -- changeset finpulse:6
@@ -143,9 +140,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_user_consent_external_unique ON a
 
 -- changeset finpulse:13
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_external_transaction_id ON transactions(external_transaction_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_booking_date ON transactions(booking_date);
-CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_is_expense ON transactions(is_expense);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_account_external_unique ON transactions(account_id, external_transaction_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_id ON transactions(bank_client_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_bank_client_booking_date ON transactions(bank_client_id, booking_date);
@@ -170,10 +169,11 @@ ALTER TABLE user_consents ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank
 ALTER TABLE user_consents ADD FOREIGN KEY (bank_id) REFERENCES banks(id);
 ALTER TABLE accounts ADD FOREIGN KEY (user_consent_id) REFERENCES user_consents(id);
 ALTER TABLE transactions ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
-ALTER TABLE transactions ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+ALTER TABLE transactions ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE transactions ADD FOREIGN KEY (bank_client_id) REFERENCES users(bank_client_id);
 ALTER TABLE categories ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE categories ADD FOREIGN KEY (parent_id) REFERENCES categories(id);
+ALTER TABLE categories ADD CONSTRAINT categories_name_unique UNIQUE (name);
 ALTER TABLE budgets ADD FOREIGN KEY (user_id) REFERENCES users(id);
 ALTER TABLE budgets ADD FOREIGN KEY (category_id) REFERENCES categories(id);
 ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users(id);
