@@ -2,6 +2,26 @@
 
 Содержит всю инфраструктуру для поднятия всей backend части, включая микросервисы, хранилища, брокеры сообщений, ML-сервис.
 
+# Файл .env
+Создайте файл .env в той же директории, что и docker-compose.prod.yml:
+
+```bash
+# Database
+DB_PASSWORD=your_strong_production_password_here
+
+# JWT Secret (очень важный!)
+JWT_SECRET=your_very_strong_jwt_secret_key_min_32_chars
+
+# Bank API credentials
+BANK_CLIENT_ID=team214
+BANK_CLIENT_SECRET=your_bank_client_secret_here
+
+# MinIO credentials
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=strong_minio_password_here
+MINIO_PUBLIC_URL=http://localhost:9000/ml-charts
+```
+
 ## Запуск
 Используем docker-compose.prod.yml
 
