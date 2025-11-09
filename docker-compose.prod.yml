@@ -16,6 +16,7 @@ services:
     networks:
       - finpulse-network
     restart: unless-stopped
+
   liquibase-migrations:
     image: liquibase/liquibase:latest
     container_name: finpulse-liquibase
