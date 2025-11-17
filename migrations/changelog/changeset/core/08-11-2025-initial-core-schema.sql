@@ -1,4 +1,4 @@
--- changeset finpulse:18
+-- changeset finpulse:16
 CREATE TABLE IF NOT EXISTS user_forecasts (
 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id),
@@ -15,16 +15,16 @@ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, forecast_week_start)
 );
--- changeset finpulse:19
+-- changeset finpulse:17
 CREATE INDEX IF NOT EXISTS idx_user_forecasts_user_id ON user_forecasts(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_forecasts_week_start ON user_forecasts(forecast_week_start);
 CREATE INDEX IF NOT EXISTS idx_user_forecasts_created_at ON user_forecasts(created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_forecasts_user_week_unique ON user_forecasts(user_id, forecast_week_start);
 
--- changeset finpulse:20
+-- changeset finpulse:18
 ALTER TABLE user_forecasts ADD FOREIGN KEY (user_id) REFERENCES users(id);
 
--- changeset finpulse:21
+-- changeset finpulse:19
 COMMENT ON TABLE user_forecasts IS 'Таблица для хранения недельных финансовых прогнозов пользователей';
 COMMENT ON COLUMN user_forecasts.forecast_amount IS 'Прогнозируемая сумма расходов на следующую неделю';
 COMMENT ON COLUMN user_forecasts.confidence_min IS 'Нижняя граница доверительного интервала';
