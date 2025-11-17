@@ -106,10 +106,10 @@ services:
 
   #Frontend
   frontend:
-    image: finpulse/frontend:latest
+    image: lohop/finpulse-frontend:latest
     container_name: finpulse-frontend
     ports:
-      - "80:80"  # <- Проброс порта наружу
+      - "80:80"
     environment:
       - REACT_APP_API_BASE_URL=http://apigateway:8080
       - REACT_APP_NOTIFICATIONS_WS_URL=ws://apigateway:8080/ws/notifications
@@ -121,7 +121,7 @@ services:
 
   #Api Gateway
   apigateway:
-    image: finpulse/apigateway:latest
+    image: lohop/apigateway:latest
     container_name: finpulse-apigateway
     environment:
       - SPRING_PROFILES_ACTIVE=docker
