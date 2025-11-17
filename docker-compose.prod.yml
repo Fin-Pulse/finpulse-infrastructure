@@ -5,18 +5,25 @@ services:
   postgres:
     image: postgres:14
     container_name: finpulse-postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d finpulse" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     environment:
       POSTGRES_DB: finpulse
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - finpulse-network
-    restart: unless-stopped
+    restart: "no"
 
+  #Миграции
   liquibase-migrations:
     image: liquibase/liquibase:latest
     container_name: finpulse-liquibase
@@ -97,6 +104,43 @@ services:
       timeout: 20s
       retries: 3
 
+  #Frontend
+  frontend:
+    image: finpulse/frontend:latest
+    container_name: finpulse-frontend
+    ports:
+      - "80:80"  # <- Проброс порта наружу
+    environment:
+      - REACT_APP_API_BASE_URL=http://apigateway:8080
+      - REACT_APP_NOTIFICATIONS_WS_URL=ws://apigateway:8080/ws/notifications
+      - REACT_APP_FORECASTS_WS_URL=ws://apigateway:8080/ws/forecasts
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
+
+  #Api Gateway
+  apigateway:
+    image: finpulse/apigateway:latest
+    container_name: finpulse-apigateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_SECRET=EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90
+      - REDIS_HOST=redis
+      - USER_SERVICE_URL=http://userservice:8081
+      - NOTIFICATION_SERVICE_URL=http://notificationservice:8084
+      - AGGREGATION_SERVICE_URL=http://aggregationservice:8082
+    ports:
+      - "8080:8080"  # оставляем для отладки
+    depends_on:
+      - redis
+      - userservice
+      - notificationservice
+      - aggregationservice
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
   # Микросервисы
   userservice:
     image: lohop/finpulse-userservice:latest
@@ -104,11 +148,11 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_PROFILES_ACTIVE=docker
       - DB_URL=jdbc:postgresql://postgres:5432/finpulse
       - REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - JWT_SECRET=${JWT_SECRET:-EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90}
+      - JWT_SECRET=EY4ZdvgJ4wnFjpeKYA2qmnCztsMR4wMAICMw7wrnSIaTRYCm51BWOaPmNtrn3n90
     depends_on:
       - postgres
       - redis
@@ -121,18 +165,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
   aggregationservice:
     image: lohop/finpulse-aggregationservice:latest
     container_name: finpulse-aggregationservice
     ports:
       - "8082:8082"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_PROFILES_ACTIVE=docker
       - DB_URL=jdbc:postgresql://postgres:5432/finpulse
       - REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - BANK_CLIENT_ID=${BANK_CLIENT_ID:-team214}
-      - BANK_CLIENT_SECRET=${BANK_CLIENT_SECRET:-hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r}
+      - BANK_CLIENT_ID=team214
+      - BANK_CLIENT_SECRET=hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r
     depends_on:
       - postgres
       - redis
