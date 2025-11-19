@@ -238,6 +238,27 @@ services:
       - finpulse-network
     restart: unless-stopped
 
+  recommendation-service:
+    image: lohop/finpulse-recommendationservice:latest
+    container_name: finpulse-recommendation-service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAMEfinpulse
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PRODUCT_SERVICE_URL=http://product-service:8085
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
