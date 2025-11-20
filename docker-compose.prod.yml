@@ -244,7 +244,7 @@ services:
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAMEfinpulse
+      - DB_NAME=finpulse
       - DB_USER=postgres
       - DB_PASSWORD=password
       - REDIS_HOST=redis
