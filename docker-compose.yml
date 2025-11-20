@@ -183,7 +183,7 @@ services:
       - REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - BANK_CLIENT_ID=team214
-      - BANK_CLIENT_SECRET=hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r
+      - BANK_CLIENT_SECRET=5XuUMVksUK2mvLYD
     depends_on:
       - postgres
       - redis
@@ -205,6 +205,21 @@ services:
       - postgres
       - redis
       - kafka
+    networks:
+      - finpulse-network
+
+  productservice:
+    image: finpulse/productservice:latest
+    container_name: finpulse-productservice
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
     networks:
       - finpulse-network
 

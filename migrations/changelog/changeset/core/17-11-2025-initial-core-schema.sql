@@ -22,13 +22,12 @@ CREATE TABLE IF NOT EXISTS product_applications (
     user_id UUID NOT NULL REFERENCES users(id),
     product_id VARCHAR(100) NOT NULL,
     bank_id UUID NOT NULL REFERENCES banks(id),
-    full_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
     payload JSONB,
     status VARCHAR(50) DEFAULT 'NEW',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP
+    expires_at TIMESTAMP,
+    delivered_at TIMESTAMP
 );
 
 -- changeset product-service:3

@@ -177,7 +177,7 @@ services:
       - REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - BANK_CLIENT_ID=team214
-      - BANK_CLIENT_SECRET=hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r
+      - BANK_CLIENT_SECRET=5XuUMVksUK2mvLYD
     depends_on:
       - postgres
       - redis
