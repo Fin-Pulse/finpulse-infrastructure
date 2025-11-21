@@ -275,6 +275,20 @@ services:
       - finpulse-network
     restart: unless-stopped
 
+  productservice:
+    image: lohop/finpulse-leadservice:latest
+    container_name: finpulse-productservice
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
 volumes:
   postgres_data:
     driver: local
