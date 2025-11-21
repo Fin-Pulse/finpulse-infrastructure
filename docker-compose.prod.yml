@@ -111,9 +111,9 @@ services:
     ports:
       - "80:80"
     environment:
-      - REACT_APP_API_BASE_URL=http://apigateway:8080
-      - REACT_APP_NOTIFICATIONS_WS_URL=ws://apigateway:8080/ws/notifications
-      - REACT_APP_FORECASTS_WS_URL=ws://apigateway:8080/ws/forecasts
+      - REACT_APP_API_BASE_URL=http://178.72.136.220:8080
+      - REACT_APP_NOTIFICATIONS_WS_URL=ws://178.72.136.220:8080/ws/notifications
+      - REACT_APP_FORECASTS_WS_URL=ws://178.72.136.220:8080/ws/forecasts
     networks:
       - finpulse-network
     restart: unless-stopped
@@ -215,6 +215,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  leadservice:
+    image: lohop/finpulse-leadservice:latest
+    container_name: finpulse-leadservice
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+    restart: unless-stopped
 
   ml-forecast-service:
     image: lohop/finpulse-mlservice:latest
