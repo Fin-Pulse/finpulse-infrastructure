@@ -111,9 +111,9 @@ services:
     ports:
       - "80:80"
     environment:
-      - REACT_APP_API_BASE_URL=http://apigateway:8080
-      - REACT_APP_NOTIFICATIONS_WS_URL=ws://apigateway:8080/ws/notifications
-      - REACT_APP_FORECASTS_WS_URL=ws://apigateway:8080/ws/forecasts
+      - REACT_APP_API_BASE_URL=http://178.72.136.220:8080
+      - REACT_APP_NOTIFICATIONS_WS_URL=ws://178.72.136.220:8080/ws/notifications
+      - REACT_APP_FORECASTS_WS_URL=ws://178.72.136.220:8080/ws/forecasts
     networks:
       - finpulse-network
     restart: unless-stopped
@@ -177,7 +177,7 @@ services:
       - REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - BANK_CLIENT_ID=team214
-      - BANK_CLIENT_SECRET=hk3EA0lgqWelO7P1gYSnyqCY3zNmez3r
+      - BANK_CLIENT_SECRET=5XuUMVksUK2mvLYD
     depends_on:
       - postgres
       - redis
@@ -216,6 +216,22 @@ services:
       timeout: 10s
       retries: 3
 
+  leadservice:
+    image: lohop/finpulse-leadservice:latest
+    container_name: finpulse-leadservice
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
   ml-forecast-service:
     image: lohop/finpulse-mlservice:latest
     container_name: finpulse-mlservice
@@ -238,6 +254,41 @@ services:
       - finpulse-network
     restart: unless-stopped
 
+  recommendation-service:
+    image: lohop/finpulse-recommendationservice:latest
+    container_name: finpulse-recommendation-service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=finpulse
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PRODUCT_SERVICE_URL=http://product-service:8085
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
+    restart: unless-stopped
+
+  productservice:
+    image: lohop/finpulse-leadservice:latest
+    container_name: finpulse-productservice
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://postgres:5432/finpulse
+      - REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - finpulse-network
 volumes:
   postgres_data:
     driver: local
